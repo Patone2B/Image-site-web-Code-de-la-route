@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entraînement Code de la Route</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .menu-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .menu-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .quiz-button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 30px;
+            border-radius: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .quiz-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .quiz-button.brevet {
+            background: linear-gradient(45deg, #FF6B6B, #FF5252);
+        }
+        .quiz-button.short {
+            background: linear-gradient(45deg, #42A5F5, #1E88E5);
+        }
+        .quiz-button.engine {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+        }
+        .quiz-button.anecdote {
+            background: linear-gradient(45deg, #9C27B0, #673AB7);
+        }
+        .progress-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+        }
+        .progress-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .chart-container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .quiz-container,
+        .engine-light-section,
+        .anecdote-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .question-counter {
+            font-size: 1.2em;
+            color: #666;
+        }
+        .score-counter {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .score-counter.danger {
+            color: #FF6B6B;
+        }
+        .question-container {
+            margin-bottom: 30px;
+        }
+        .correction-text {
+            background: #f0f8ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-size: 1.1em;
+            line-height: 1.5;
+            color: #333;
+            display: none;
+        }
+        .question-text {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .question-image {
+            width: 100%;
+            max-width: 500px;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin: 20px auto;
+            display: block;
+            border: 2px solid #ddd;
+        }
+        .answers-container {
+            display: grid;
+            gap: 15px;
+        }
+        .answer-button {
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+        .answer-button:hover {
+            background: #e9ecef;
+            border-color: #4CAF50;
+        }
+        .answer-button.selected {
+            background: #e3f2fd;
+            border-color: #2196F3;
+        }
+        .answer-button.correct {
+            background: #e8f5e8;
+            border-color: #4CAF50;
+            color: #2e7d32;
+        }
+        .answer-button.incorrect {
+            background: #ffebee;
+            border-color: #f44336;
+            color: #c62828;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .nav-button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .back-button {
+            background: #6c757d;
+            color: white;
+        }
+        .next-button {
+            background: #007bff;
+            color: white;
+        }
+        .next-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .nav-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .result-container {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+        .result-title {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .result-title.success {
+            color: #4CAF50;
+        }
+        .result-title.failure {
+            color: #FF6B6B;
+        }
+        .result-score {
+            font-size: 1.8em;
+            margin-bottom: 30px;
+            color: #666;
+        }
+        .restart-button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .restart-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+        .hidden {
+            display: none !important;
+        }
+        .engine-light-title,
+        .anecdote-title {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            color: #333;
+        }
+        .warning-lights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .warning-light-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+        .warning-light-icon {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+        .warning-light-text {
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.4;
+        }
+        .engine-back-button {
+            display: block;
+            margin: 0 auto;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .engine-back-button:hover {
+            background: #5a6268;
+        }
+        .anecdote-content {
+            margin-bottom: 30px;
+        }
+        .anecdote-item {
+            background: #f8f9fa;
+            border-left: 4px solid #9C27B0;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+        .anecdote-item h3 {
+            color: #9C27B0;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .anecdote-item p {
+            line-height: 1.6;
+            color: #555;
+        }
+        .report-error-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .report-error-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+        @media (max-width: 768px) {
+            .menu-buttons {
+                grid-template-columns: 1fr;
+            }
+            .warning-lights-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 Code de la Route</h1>
+            <p class="subtitle">Entraînement et préparation aux examens</p>
+        </header>
+        
+        <!-- Menu Principal -->
+        <div id="menu" class="menu-container">
+            <div class="menu-buttons">
+                <button class="quiz-button" onclick="startQuiz(40)">
+                    Quiz 40 Questions
+                    <br><small>Entraînement complet</small>
+                </button>
+                <button class="quiz-button short" onclick="startQuiz(10)">
+                    Quiz 10 Questions
+                    <br><small>Entraînement rapide</small>
+                </button>
+                <button class="quiz-button brevet" onclick="startQuiz(40, true)">
+                    Brevet Blanc 40 Questions
+                    <br><small>Examen officiel</small>
+                </button>
+                <button class="quiz-button engine" onclick="showEngineLight()">
+                    🔧 Voyants Moteur
+                    <br><small>Découvrir les voyants</small>
+                </button>
+                <button class="quiz-button anecdote" onclick="showAnecdote()">
+                    📚 Anecdotes
+                    <br><small>Histoires du code</small>
+                </button>
+            </div>
+            <div class="progress-section">
+                <h3 class="progress-title">Votre Progression vers 35/40</h3>
+                <div class="chart-container">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Voyants Moteur -->
+        <div id="engine-light" class="engine-light-section">
+            <h2 class="engine-light-title">🔧 Voyants du tableau de bord</h2>
+            <div class="warning-lights-grid">
+                <!-- Voyant Check Engine -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Check_engine_light.svg/1200px-Check_engine_light.svg.png"
+                         alt="Voyant Check Engine" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant moteur (Check Engine) : Problème avec le moteur ou l'émission de polluants.</p>
+                </div>
+                <!-- Voyant Pression Huile -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Oil_pressure_light.svg/1024px-Oil_pressure_light.svg.png"
+                         alt="Voyant pression huile" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant pression d'huile : Niveau ou pression d'huile insuffisant.</p>
+                </div>
+                <!-- Voyant Température -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Coolant_temperature_warning_light.svg/1024px-Coolant_temperature_warning_light.svg.png"
+                         alt="Voyant température" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant température : Surchauffe du moteur.</p>
+                </div>
+                <!-- Voyant Batterie -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Car_battery_light.svg/1024px-Car_battery_light.svg.png"
+                         alt="Voyant batterie" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant batterie : Problème de charge de la batterie.</p>
+                </div>
+                <!-- Voyant ABS -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/ABS_light.svg/1024px-ABS_light.svg.png"
+                         alt="Voyant ABS" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant ABS : Dysfonctionnement du système antiblocage des roues.</p>
+                </div>
+                <!-- Voyant Airbag -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Airbag_warning_light.svg/1024px-Airbag_warning_light.svg.png"
+                         alt="Voyant airbag" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant airbag : Problème avec le système d'airbag.</p>
+                </div>
+                <!-- Voyant Frein -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Brake_warning_light.svg/1024px-Brake_warning_light.svg.png"
+                         alt="Voyant frein" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant frein : Frein à main serré ou niveau de liquide de frein bas.</p>
+                </div>
+                <!-- Voyant Carburant -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Fuel_gauge_light.svg/1024px-Fuel_gauge_light.svg.png"
+                         alt="Voyant carburant" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant carburant : Réserve de carburant faible.</p>
+                </div>
+                <!-- Voyant Ceinture -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Seat_belt_warning_light.svg/1024px-Seat_belt_warning_light.svg.png"
+                         alt="Voyant ceinture" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant ceinture : Ceinture de sécurité non attachée.</p>
+                </div>
+                <!-- Voyant Porte Ouverte -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Door_ajar_warning_light.svg/1024px-Door_ajar_warning_light.svg.png"
+                         alt="Voyant porte ouverte" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant porte ouverte : Une porte ou un coffre est mal fermé.</p>
+                </div>
+                <!-- Voyant Pression Pneus -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Tire_pressure_warning_light.svg/1024px-Tire_pressure_warning_light.svg.png"
+                         alt="Voyant pression pneus" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant pression des pneus : Pression anormale dans un ou plusieurs pneus.</p>
+                </div>
+                <!-- Voyant Direction Assistée -->
+                <div class="warning-light-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Power_steering_warning_light.svg/1024px-Power_steering_warning_light.svg.png"
+                         alt="Voyant direction assistée" class="warning-light-icon">
+                    <p class="warning-light-text">Voyant direction assistée : Dysfonctionnement de la direction assistée.</p>
+                </div>
+            </div>
+            <button class="engine-back-button" onclick="backToMenuFromEngineLight()">Retour</button>
+        </div>
+
+        <!-- Section Anecdotes -->
+        <div id="anecdote" class="anecdote-section">
+            <h2 class="anecdote-title">📚 Anecdotes du Code de la Route</h2>
+            <div class="anecdote-content">
+                <div class="anecdote-item">
+                    <h3>🚦 La première signalisation lumineuse</h3>
+                    <p>Le premier feu de signalisation au monde a été installé à Londres en 1868, mais il fonctionnait au gaz ! Il a malheureusement explosé, blessant le policier qui l'actionnait. En France, le premier feu tricolore électrique a été installé place de l'Opéra à Paris en 1923.</p>
+                </div>
+                
+                <div class="anecdote-item">
+                    <h3>🛣️ Pourquoi rouler à droite ?</h3>
+                    <p>En France, on roule à droite depuis Napoléon ! Avant la Révolution, les nobles roulaient à gauche pour avoir l'épée à droite face aux manants. Après 1789, par esprit révolutionnaire, on a adopté la droite. Cette règle s'est ensuite exportée dans les pays conquis par Napoléon.</p>
+                </div>
+                
+                <div class="anecdote-item">
+                    <h3>📏 L'origine des limitations de vitesse</h3>
+                    <p>La première limitation de vitesse en France remonte à 1893 : 12 km/h en ville et 20 km/h en campagne ! Cette loi était surnommée "la loi de l'homme qui court devant" car un homme à pied devait précéder les véhicules avec un drapeau rouge pour prévenir les piétons.</p>
+                </div>
+                
+                <div class="anecdote-item">
+                    <h3>🚗 Le permis de conduire français</h3>
+                    <p>Le permis de conduire français a été créé en 1893, mais il fallait seulement savoir lire ! L'examen pratique n'a été instauré qu'en 1954. Et le fameux "permis rose" ? Il a existé de 1975 à 2013 et était reconnaissable par sa couleur... rose !</p>
+                </div>
+                
+                <div class="anecdote-item">
+                    <h3>🔺 Le mystère du triangle de signalisation</h3>
+                    <p>Pourquoi un triangle et pas un carré ? Cette forme a été choisie car c'est la figure géométrique la plus stable et la plus visible. De plus, la couleur rouge est celle qui se distingue le mieux dans le spectre visible, même pour les personnes daltoniennes.</p>
+                </div>
+                
+                <div class="anecdote-item">
+                    <h3>🎯 Les points du permis</h3>
+                    <p>Le système de points du permis existe depuis 1992 en France. Mais saviez-vous qu'au départ, on commençait avec 12 points et qu'on en gagnait avec le temps ? Le système actuel où l'on perd des points a été mis en place car il était psychologiquement plus efficace !</p>
+                </div>
+            </div>
+            <button class="engine-back-button" onclick="backToMenuFromAnecdote()">Retour</button>
+        </div>
+
+        <!-- Quiz Container -->
+        <div id="quiz" class="quiz-container">
+            <div class="quiz-header">
+                <div class="question-counter">
+                    Question <span id="currentQuestion">1</span> / <span id="totalQuestions">40</span>
+                </div>
+                <div class="score-counter" id="scoreCounter">40</div>
+            </div>
+            <div class="question-container">
+                <div class="question-text" id="questionText"></div>
+                <img id="questionImage" class="question-image hidden" alt="Image de la question">
+                <div class="answers-container" id="answersContainer"></div>
+                <div class="correction-text" id="correctionText"></div>
+            </div>
+            <div class="navigation-buttons">
+                <button class="nav-button next-button" id="nextButton" onclick="nextQuestion()">Suivant →</button>
+            </div>
+        </div>
+        
+        <!-- Result Container -->
+        <div id="result" class="result-container">
+            <h2 class="result-title" id="resultTitle">Résultat</h2>
+            <p class="result-score" id="resultScore"></p>
+            <button class="restart-button" onclick="backToMenu()">Retour au Menu</button>
+        </div>
+    </div>
+    
+    <!-- Bouton Signaler une erreur -->
+    <button class="report-error-button" onclick="reportError()">
+        🐛 Signaler une erreur
+    </button>
+    
+    <script>
+        // Variables globales
+        let currentQuizData = [];
+        let currentQuestionIndex = 0;
+        let score = 40;
+        let totalQuestions = 40;
+        let userAnswers = [];
+        let isBrevetMode = false;
+        let correctionShown = false;
+        let isProcessing = false;
+
+        // Base de données des questions
+        const questionsDB = [
+            {
+                id: 1,
+                text: "Quelle est la vitesse maximale autorisée en agglomération ?",
+                image: null,
+                answers: [
+                    { text: "30 km/h", correct: false },
+                    { text: "50 km/h", correct: true },
+                    { text: "70 km/h", correct: false },
+                    { text: "90 km/h", correct: false }
+                ],
+                multipleChoice: false,
+                correction: "La vitesse maximale autorisée en agglomération est de 50 km/h selon le code de la route français."
+            },
+            {
+                id: 2,
+                text: "Quels équipements sont obligatoires dans une voiture ? (Plusieurs réponses possibles)",
+                image: null,
+                answers: [
+                    { text: "Ceintures de sécurité", correct: true },
+                    { text: "Triangle de signalisation", correct: true },
+                    { text: "Gilet de sécurité", correct: true },
+                    { text: "GPS", correct: false },
+                    { text: "Extincteur", correct: false }
+                ],
+                multipleChoice: true,
+                correction: "Les équipements obligatoires sont : ceintures de sécurité, triangle de signalisation et gilet de sécurité. Le GPS et l'extincteur ne sont pas obligatoires."
+            },
+            {
+                id: 3,
+                text: "Lesquels de ces panneaux indiquent qu'il est interdit de stationner ?",
+                image: null,
+                answers: [
+                    { text: "Un panneau rond et bleu avec une croix rouge", correct: false },
+                    { text: "Un panneau carré et bleu avec une croix rouge", correct: true },
+                    { text: "Un panneau rond et rouge avec une barre blanche", correct: true }
+                ],
+                multipleChoice: true,
+                correction: "Le panneau carré bleu avec une croix rouge interdit le stationnement mais permet l'arrêt momentané. Le panneau rond rouge avec une barre blanche interdit à la fois le stationnement et l'arrêt."
+            },
+            {
+                id: 4,
+                text: "Une intersection est visible devant vous, il n'y a ni marquage ni indication de priorité. Qui est alors prioritaire ?",
+                image: "url_de_votre_image.jpg",
+                answers: [
+                    { text: "Le véhicule qui arrive par la droite", correct: true },
+                    { text: "Le véhicule le plus rapide", correct: false },
+                    { text: "Le véhicule le plus lourd", correct: false }
+                ],
+                multipleChoice: false,
+                correction: "C'est ce que nous appelons la règle de priorité à droite. Celle-ci est toujours applicable sauf en cas de contre-indications (marquage au sol, panneaux, etc.)."
+            },
+            {
+                id: 5,
+                text: "Sur une route à double sens, peut-on dépasser un deux-roues par la droite ?",
+                image: "url_de_votre_image.jpg",
+                answers: [
+                    { text: "Oui, si la voie est libre", correct: false },
+                    { text: "Non, c'est interdit", correct: true },
+                    { text: "Uniquement en ville", correct: false }
+                ],
+                multipleChoice: false,
+                correction: "Le dépassement par la droite est interdit, sauf si le véhicule devant signale qu'il tourne à gauche."
+            },
+            {
+                id: 6,
+                text: "Pour économiser du carburant, il est recommandé de :",
+                image: "url_de_votre_image.jpg",
+                answers: [
+                    { text: "Rouler les fenêtres ouvertes", correct: false },
+                    { text: "Faire un démarrage canon au feu rouge", correct: false },
+                    { text: "Anticiper", correct: true },
+                    { text: "Maintenir une vitesse stable et modérée", correct: true }
+                ],
+                multipleChoice: true,
+                correction: "L'anticipation vous fera non seulement économiser du carburant, mais aussi diminuer l'usure des pièces de votre voiture. Maintenir une vitesse stable et modérée est également recommandé."
+            },
+            {
+                id: 7,
+                text: "J'entends les gyrophares, ce sont les pompiers. Je me trouve sur une ligne droite avec des voitures seulement au loin :",
+                image: "url_de_votre_image.jpg",
+                answers: [
+                    { text: "Je leur passe le bonjour.", correct: false },
+                    { text: "Je reste au milieu de ma voie.", correct: false },
+                    { text: "Je leur facilite le passage.", correct: true }
+                ],
+                multipleChoice: false,
+                correction: "On distingue deux catégories de véhicules avec gyrophare : ceux prioritaires (ex. : pompiers, SMUR, police, médecins urgentistes, etc.) et ceux qui bénéficient d'une facilité de passage (ex. : dépanneuse, EDF, Gaz, transport de fonds, engins de chantier, etc.)."
+            },
+            {
+                id: 8,
+                text: "Un agent des forces de l'ordre me fait signe de m'arrêter. En cas de non-respect, j'encours :",
+                image: "url_de_votre_image.jpg",
+                answers: [
+                    { text: "Une amende de 3 750 euros.", correct: true },
+                    { text: "Une perte de 6 points sur le permis.", correct: true },
+                    { text: "Je n'ai rien à me reprocher, donc je ne m'arrête pas.", correct: false },
+                    { text: "J'encours 3 mois d'emprisonnement.", correct: true }
+                ],
+                multipleChoice: true,
+                correction: "Dans le cas où je ne me serais pas arrêté, c'est ce que l'on appelle un refus d'obtempérer. Le montant de l'amende peut aller jusqu'à 3 750 euros, avec un retrait de 6 points sur le permis de conduire, et j'encours même une peine d'emprisonnement de 3 mois."
+            },
+            {
+                id: 9,
+                text: "Je veux tourner à droite, cependant un vélo est à ma droite (voir image). Je :",
+                image: "url_de_votre_image.jpg",
+                answers: [
+                    { text: "Je tourne avant, car j'ai mon clignotant.", correct: false },
+                    { text: "Je discute avec lui pour savoir comment nous allons faire.", correct: false },
+                    { text: "Je lui fais signe de passer.", correct: true }
+                ],
+                multipleChoice: false,
+                correction: "En tant qu'automobiliste, dans une situation comme celle-là, il est de mon devoir de garantir la sécurité du vélo. Je l'invite donc à passer avec un geste de la main et tourne une fois qu'il ne représente plus un danger pour moi."
+            },
+            {
+                id: 10,
+                text: "Suite à un accident avec un véhicule possédant l'eCall",
+                image: "url_de_votre_image.jpg",
+                answers: [
+                    { text: "La voiture se répare toute seule", correct: false },
+                    { text: "La voiture envoie un signal pour prévenir d'un accident à toutes les autres voitures possédant l'eCall", correct: false },
+                    { text: "La voiture prévient automatiquement les secours et donne ainsi la géolocalisation du véhicule", correct: true }
+                ],
+                multipleChoice: false,
+                correction: "C'est à partir de mars 2018 que la Commission européenne a obligé les constructeurs automobiles à équiper leurs nouveaux véhicules de l'eCall. Ce système détecte un accident et prévient automatiquement les secours en leur donnant la position exacte du véhicule, ce qui permet une intervention plus rapide."
+            },
+            {
+                id: 11,
+                text: "Des pneus sous-gonflés :",
+                image: "url_de_votre_image.jpg",
+                answers: [
+                    { text: "Permet de mieux drifter dans les virages", correct: false },
+                    { text: "Augmente la consommation de carburant", correct: true },
+                    { text: "Augmente le risque d'éclatement", correct: true }
+                ],
+                multipleChoice: true,
+                correction: "Des pneus sous-gonflés n'améliorent pas l'adhérence, au contraire : des pneus en sous-gonflage augmentent non seulement le risque d'éclatement, mais aussi la distance de freinage. De plus, sous-gonflés, les pneus adhèrent moins bien à la route."
+            },
+            {
+                id: 12,
+                text: "À quoi sert ce cadran ?",
+                image:"https://github.com/Patone2B/Image-site-web-Code-de-la-route/blob/e1f4d34532659c37eb4d24d0815efddcfeadd93b/brum-brum-2-1415199.jpg",
+                answers: [
+                    { text: "Il indique le nombre de tours par minute du moteur", correct: true },
+                    { text: "Il ne sert à rien sur les voitures grand public, c'est seulement pour la course et le rallye", correct: false },
+                    { text: "Il aide à pratiquer l'éco-conduite", correct: true }
+                ],
+                multipleChoice: true,
+                correction: "Ceci est le compte-tours. Il n'est pas obligatoire sur les voitures, mais il est très pratique si l'on a du mal à reconnaître son régime moteur juste grâce au bruit. Enfin, le compte-tours permet de caler son moteur au bon régime, de façon à éviter de caler, d'encrasser ou d'abîmer le moteur."
+            }
+        ];
+
+        // Initialisation du graphique de progression
+        function initProgressChart() {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            const lastScore = localStorage.getItem('lastScore');
+
+            if (!lastScore) {
+                const chartContainer = document.querySelector('.chart-container');
+                chartContainer.innerHTML = '<p style="color: #666; font-size: 1.2em; padding: 40px;">Terminez votre premier quiz de 40 questions pour voir votre progression !</p>';
+                return;
+            }
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Score actuel', 'Objectif restant'],
+                    datasets: [{
+                        data: [lastScore, Math.max(0, 35 - lastScore)],
+                        backgroundColor: [
+                            lastScore >= 35 ? '#4CAF50' : '#FF6B6B',
+                            '#e0e0e0'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            const centerText = document.createElement('div');
+            centerText.style.position = 'absolute';
+            centerText.style.top = '50%';
+            centerText.style.left = '50%';
+            centerText.style.transform = 'translate(-50%, -50%)';
+            centerText.style.fontSize = '24px';
+            centerText.style.fontWeight = 'bold';
+            centerText.innerHTML = `${lastScore}/35`;
+            centerText.style.color = lastScore >= 35 ? '#4CAF50' : '#FF6B6B';
+
+            const chartContainer = document.querySelector('.chart-container');
+            chartContainer.style.position = 'relative';
+            chartContainer.appendChild(centerText);
+        }
+
+        // Génération de questions aléatoires
+        function generateQuestions(count) {
+            const questions = [];
+            const usedIndexes = new Set();
+            while (questions.length < count && questions.length < questionsDB.length) {
+                const randomIndex = Math.floor(Math.random() * questionsDB.length);
+                if (!usedIndexes.has(randomIndex)) {
+                    usedIndexes.add(randomIndex);
+                    questions.push({ ...questionsDB[randomIndex], id: questions.length + 1 });
+                }
+            }
+            return questions;
+        }
+
+        // Démarrer un quiz
+        function startQuiz(questionCount, brevetMode = false) {
+            totalQuestions = questionCount;
+            score = questionCount;
+            isBrevetMode = brevetMode;
+            currentQuestionIndex = 0;
+            userAnswers = [];
+            correctionShown = false;
+            isProcessing = false;
+
+            currentQuizData = generateQuestions(questionCount);
+
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('quiz').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+
+            document.getElementById('totalQuestions').textContent = questionCount;
+            updateScoreDisplay();
+            showQuestion();
+        }
+
+        // Afficher une question
+        function showQuestion() {
+            correctionShown = false;
+            isProcessing = false;
+
+            const question = currentQuizData[currentQuestionIndex];
+            const nextButton = document.getElementById('nextButton');
+
+            document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+            document.getElementById('questionText').textContent = question.text;
+
+            const imageElement = document.getElementById('questionImage');
+            if (question.image) {
+                imageElement.src = question.image;
+                imageElement.classList.remove('hidden');
+            } else {
+                imageElement.classList.add('hidden');
+            }
+
+            const answersContainer = document.getElementById('answersContainer');
+            answersContainer.innerHTML = '';
+
+            question.answers.forEach((answer, index) => {
+                const button = document.createElement('button');
+                button.className = 'answer-button';
+                button.textContent = answer.text;
+                button.onclick = () => selectAnswer(index, question.multipleChoice);
+                button.setAttribute('data-index', index);
+                answersContainer.appendChild(button);
+            });
+
+            // Masquer la correction et réinitialiser le bouton
+            document.getElementById('correctionText').style.display = 'none';
+            nextButton.textContent = 'Valider';
+            nextButton.disabled = false;
+        }
+
+        // Sélectionner une réponse
+        function selectAnswer(answerIndex, isMultiple) {
+            if (correctionShown || isProcessing) return;
+
+            const question = currentQuizData[currentQuestionIndex];
+            const answerButtons = document.querySelectorAll('.answer-button');
+
+            if (isMultiple) {
+                const button = answerButtons[answerIndex];
+                button.classList.toggle('selected');
+            } else {
+                answerButtons.forEach(btn => btn.classList.remove('selected'));
+                answerButtons[answerIndex].classList.add('selected');
+            }
+        }
+
+        // Question suivante
+        function nextQuestion() {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const nextButton = document.getElementById('nextButton');
+
+            if (!correctionShown) {
+                // Phase de validation de la réponse
+                const question = currentQuizData[currentQuestionIndex];
+                const selectedButtons = document.querySelectorAll('.answer-button.selected');
+
+                if (selectedButtons.length === 0) {
+                    alert('Veuillez sélectionner au moins une réponse.');
+                    isProcessing = false;
+                    return;
+                }
+
+                let isCorrect = true;
+                const selectedIndexes = Array.from(selectedButtons).map(btn =>
+                    parseInt(btn.getAttribute('data-index'))
+                );
+
+                if (question.multipleChoice) {
+                    const correctIndexes = question.answers
+                        .map((answer, index) => answer.correct ? index : -1)
+                        .filter(index => index !== -1);
+
+                    isCorrect = correctIndexes.length === selectedIndexes.length &&
+                               correctIndexes.every(index => selectedIndexes.includes(index)) &&
+                               selectedIndexes.every(index => correctIndexes.includes(index));
+                } else {
+                    isCorrect = selectedIndexes.length === 1 &&
+                               question.answers[selectedIndexes[0]].correct;
+                }
+
+                if (!isCorrect) {
+                    score--;
+                    updateScoreDisplay();
+                }
+
+                // Désactiver tous les boutons de réponse et afficher la correction
+                const answerButtons = document.querySelectorAll('.answer-button');
+                answerButtons.forEach((button, index) => {
+                    if (question.answers[index].correct) {
+                        button.classList.add('correct');
+                    } else if (selectedIndexes.includes(index)) {
+                        button.classList.add('incorrect');
+                    }
+                    button.disabled = true;
+                });
+
+                // Afficher la correction
+                const correctionElement = document.getElementById('correctionText');
+                correctionElement.textContent = question.correction;
+                correctionElement.style.display = 'block';
+
+                // Changer le bouton pour passer à la question suivante
+                correctionShown = true;
+                nextButton.textContent = 'Question suivante →';
+
+            } else {
+                // Phase de passage à la question suivante
+                currentQuestionIndex++;
+                if (currentQuestionIndex < currentQuizData.length) {
+                    showQuestion();
+                } else {
+                    showResult();
+                }
+            }
+
+            isProcessing = false;
+        }
+
+        // Mettre à jour l'affichage du score
+        function updateScoreDisplay() {
+            const scoreElement = document.getElementById('scoreCounter');
+            scoreElement.textContent = score;
+
+            if (score < 35) {
+                scoreElement.classList.add('danger');
+            } else {
+                scoreElement.classList.remove('danger');
+            }
+        }
+
+        // Afficher le résultat final
+        function showResult() {
+            document.getElementById('quiz').style.display = 'none';
+            document.getElementById('result').style.display = 'block';
+
+            const resultTitle = document.getElementById('resultTitle');
+            const resultScore = document.getElementById('resultScore');
+
+            if (score >= 35) {
+                resultTitle.textContent = '🎉 Réussi !';
+                resultTitle.className = 'result-title success';
+            } else {
+                resultTitle.textContent = '😔 Dommage';
+                resultTitle.className = 'result-title failure';
+            }
+
+            resultScore.textContent = `Score final: ${score}/${totalQuestions}`;
+
+            if (totalQuestions === 40) {
+                localStorage.setItem('lastScore', score);
+            }
+        }
+
+        // Retour au menu
+        function backToMenu() {
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('menu').style.display = 'block';
+            initProgressChart();
+        }
+
+        // Afficher la section des voyants moteur
+        function showEngineLight() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('engine-light').style.display = 'block';
+        }
+
+        // Retour au menu depuis la section voyants moteur
+        function backToMenuFromEngineLight() {
+            document.getElementById('engine-light').style.display = 'none';
+            document.getElementById('menu').style.display = 'block';
+        }
+
+        // Afficher la section des anecdotes
+        function showAnecdote() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('anecdote').style.display = 'block';
+        }
+
+        // Retour au menu depuis la section anecdotes
+        function backToMenuFromAnecdote() {
+            document.getElementById('anecdote').style.display = 'none';
+            document.getElementById('menu').style.display = 'block';
+        }
+
+        // Signaler une erreur
+        function reportError() {
+            const subject = "Signalement d'erreur - Application Code de la Route";
+            const body = "Bonjour,\n\nJ'ai trouvé une erreur dans l'application :\n\n[Décrivez l'erreur ici]\n\nMerci de corriger cette erreur.\n\nCordialement";
+            const mailtoLink = `mailto:support@code-route.fr?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.open(mailtoLink);
+        }
+
+        // Initialisation
+        window.onload = function() {
+            initProgressChart();
+        };
+    </script>
+</body>
+</html>
